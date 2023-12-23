@@ -53,23 +53,6 @@ public class OCR_main {
                 }
             }
         }
-        /*boolean go = true;
-        int coloum = 0;
-        while (go) {
-            for (int i = 0; i < a[coloum].length; i++) {
-                if (a[i][coloum] == 1) {
-                    go = false;
-                    coloum--;
-                }
-            }
-            coloum++;
-        }
-        int[][] a2 = new int[h + 2][w - coloum + 2];
-        for (int i = 0; i < h; i++) {
-            for (int j = coloum; j < h + 2; j++) {
-                a2[i][j - coloum] = a[i][j];
-            }
-        }*/
         return a;
     }
 
@@ -94,12 +77,12 @@ public class OCR_main {
     }
     public static void print2DArray(int[][] a) {
         for (int[] n : a) {
-            String s="[";
+            StringBuilder s= new StringBuilder("[");
             for (int i : n) {
                 if (i == 0) {
-                    s+=" ";
+                    s.append(" ");
                 } else {
-                    s+=i;
+                    s.append(i);
                 }
             }
             System.out.println(s+"]");

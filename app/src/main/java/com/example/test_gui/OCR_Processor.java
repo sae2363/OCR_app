@@ -181,9 +181,7 @@ public class OCR_Processor {
                 indexs.add(i);
             }
         }
-        if (topN == 11) {
-            // System.out.println(indexs);
-        }
+        // System.out.println(indexs);
         // starting at temp create the indvidual arrays
         int i = 0, r = 0;
         while (i < indexs.size() - 2) {

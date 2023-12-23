@@ -384,8 +384,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun GreetingPreview() {
         Test_guiTheme {
-            //TextBox(10, 70, "hi")
-            //ShowImg(myBitmap2, r)
         }
     }
 }

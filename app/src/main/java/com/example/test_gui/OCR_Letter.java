@@ -4,14 +4,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.content.Context;
 import android.graphics.Color;
+
 import java.util.*;
 
-public class OCR_Letter{
+public class OCR_Letter {
     ArrayList<int[][]> cap, low, pun, edge;
     List<Character> punList;
     List<String> edgeList;
     int[][] capA, lowA, punA, edgeA;
-    Context r=OCR_main.r;
+    Context r = OCR_main.r;
+
     public OCR_Letter() {
         Bitmap bm1 = BitmapFactory.decodeResource(r.getResources(), R.drawable.letter_cap);
         Bitmap bm2 = BitmapFactory.decodeResource(r.getResources(), R.drawable.letter_low);
@@ -29,8 +31,8 @@ public class OCR_Letter{
         pun = createArrays(punA);
         edge = createArrays(edgeA);
         Collections.addAll(punList, '!', '“', '#', '&', '‘', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
-                '>', '?', '@','`');
-        Collections.addAll(edgeList, "ff","ft");
+                '>', '?', '@', '`');
+        Collections.addAll(edgeList, "ff", "ft");
     }
 
     public int[][] getChar(char a) {
@@ -67,7 +69,7 @@ public class OCR_Letter{
             // System.out.println(top + " " + bottem + " " + i + " " + r);// indexs.get(i)+"
             // "+indexs.get(r));
             if (a.size() == 1 && baseImg.length == 140) {
-                r+=3;
+                r += 3;
                 while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
                     r++;
                 a.add(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1, baseImg));
@@ -86,7 +88,7 @@ public class OCR_Letter{
         int[][] a = new int[h + 2][w + 2];
         for (int i = 1; i < h; i++) {
             for (int j = 1; j < w; j++) {
-                if (hexIsBlack(pic,j,i,15)) {
+                if (hexIsBlack(pic, j, i, 15)) {
                     a[i][j] = 1;
                 }
             }
@@ -94,15 +96,15 @@ public class OCR_Letter{
         boolean go = true;
         int coloum = 0;
         while (go) {
-            for (int i = 0; i < a.length; i++) {
-                if (a[i][coloum] == 1) {
+            for (int[] ints : a) {
+                if (ints[coloum] == 1) {
                     go = false;
                     coloum--;
                 }
             }
             coloum++;
         }
-        int[][] a2 = new int[h+2][w - coloum + 2];
+        int[][] a2 = new int[h + 2][w - coloum + 2];
         for (int i = 0; i < h; i++) {
             for (int j = coloum; j < h + 2; j++) {
                 a2[i][j - coloum] = a[i][j];
@@ -159,8 +161,9 @@ public class OCR_Letter{
             System.out.println("]");
         }
     }
+
     //x is column and y is row start at top left
-    public static boolean hexIsBlack(Bitmap bitmap, int x, int y,int t) {
+    public static boolean hexIsBlack(Bitmap bitmap, int x, int y, int t) {
         // Get the color of the pixel at position (x, y)
         int pixel = bitmap.getPixel(x, y);
 

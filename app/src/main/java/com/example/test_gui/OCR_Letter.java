@@ -4,17 +4,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.content.Context;
 import android.graphics.Color;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class OCR_Letter{
     ArrayList<int[][]> cap, low, pun, edge;
     List<Character> punList;
     List<String> edgeList;
-    String img, img2, img3, img4;
-    Bitmap myPicture, myPicture2, myPicture3, mypic4;
     int[][] capA, lowA, punA, edgeA;
     Context r=OCR_main.r;
     public OCR_Letter() {
@@ -34,8 +29,8 @@ public class OCR_Letter{
         pun = createArrays(punA);
         edge = createArrays(edgeA);
         Collections.addAll(punList, '!', '“', '#', '&', '‘', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
-                '>', '?', '@');
-        Collections.addAll(edgeList, "ff");
+                '>', '?', '@','`');
+        Collections.addAll(edgeList, "ff","ft");
     }
 
     public int[][] getChar(char a) {
@@ -64,7 +59,7 @@ public class OCR_Letter{
             }
         }
         // starting at temp create the indvidual arrays
-        int i = 0, r = 0;
+        int i = 0, r;
         while (i < indexs.size() - 1) {
             r = i + 1;
             while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
@@ -72,7 +67,7 @@ public class OCR_Letter{
             // System.out.println(top + " " + bottem + " " + i + " " + r);// indexs.get(i)+"
             // "+indexs.get(r));
             if (a.size() == 1 && baseImg.length == 140) {
-                r++;
+                r+=3;
                 while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
                     r++;
                 a.add(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1, baseImg));

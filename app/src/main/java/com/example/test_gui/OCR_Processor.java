@@ -1,7 +1,5 @@
 package com.example.test_gui;
 
-import android.util.Log;
-
 import java.util.*;
 
 public class OCR_Processor {
@@ -15,11 +13,13 @@ public class OCR_Processor {
     }
 
     public String processArray(int[][] a) {
-        //ArrayString(a);
         spacePlus = false;
         baseImg = a;
         spaceLM = new ArrayList<>();
         indexsM = new ArrayList<>();
+        baseImg = trimL(a);
+        a=null;
+        //print2DArray(baseImg);
         Align_Array();
         ArrayList<ArrayList<int[][]>> LArray = new ArrayList<>();
         for (int i = 2; i < lines; i++) {
@@ -46,15 +46,18 @@ public class OCR_Processor {
     public String string(ArrayList<ArrayList<int[][]>> LArray) {
         OCR_Letter letters = new OCR_Letter();
         String s = "";
-
         for (int i = 0; i < spaceLM.get(0).size(); i++) {
             // spaceLM.get(0).set(i,spaceLM.get(0).get(i)+1);
         }
 
         for (int l = 0; l < LArray.size(); l++) {
             for (int i = 0; i < LArray.get(l).size(); i++) {
+                //print2DArray(LArray.get(l).get(i));
                 double[] data = new double[8];
-
+                if (l == 0 && i > 13) {
+                    // print2DArray(LArray.get(l).get(i));
+                }
+                //print2DArray(LArray.get(l).get(i));
                 compair(letters.low, LArray.get(l).get(i), data, 0);
                 compair(letters.cap, LArray.get(l).get(i), data, 2);
                 compair(letters.pun, LArray.get(l).get(i), data, 4);
@@ -159,7 +162,7 @@ public class OCR_Processor {
         int bottem = 0, top = 0;
         while (baseImg[top][1] != topN)
             top++;
-        bottem = top + 1;
+        bottem = top;
         ArrayList<Integer> indexs = indexsM.get(indexInA);
         for (int i = top + 1; i < baseImg.length; i++) {
             if (baseImg[i][0] != 0 && baseImg[i][0] != 1) {
@@ -172,7 +175,7 @@ public class OCR_Processor {
         int temp = 0;
         while (!lineCheckV(top, bottem, temp, 0))
             temp++;
-        for (int i = temp; i < baseImg[0].length; i++) {
+        for (int i = temp; i < baseImg[0].length - 1; i++) {
             if (lineCheckV(top, bottem, i, 0)
                     || lineCheckV(top, bottem, i - 1, 0) && lineCheckV(top, bottem, i + 1, 0)) {
                 indexs.add(i);
@@ -192,14 +195,19 @@ public class OCR_Processor {
             // first letter goes
             // then go to most far right one and if there is a space below it not mentioned
             // in the array then it found the second letter
-            if (bottem - top > ((indexs.get(r) + 1) - indexs.get(i)) * 1.4) {
+            if ((bottem - top > ((indexs.get(r) + 1) - indexs.get(i)) * 1.4)) {
                 a.add(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1));
-                //see why w is werid
-                if(i==0&&indexInA==0)
-                    print2DArray(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1));
+                // see why w is werid
+                // if(i==0&&indexInA==0)
+                // print2DArray(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1));
             } else {
-                splitLetter(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1), a);
-                spacePlus = true;
+                if (splitcheck(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1))) {
+                    //print2DArray(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1));
+                    splitLetter(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1), a);
+                    spacePlus = true;
+                } else {
+                    a.add(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1));
+                }
             }
             i = r + 1;
             while (!lineCheckV(top, bottem, temp, 0)) {
@@ -209,6 +217,30 @@ public class OCR_Processor {
         indexsM.set(indexInA, indexs);
         return a;
 
+    }
+
+    public boolean splitcheck(int[][] a) {
+        //print2DArray(a);
+        int rl = 0, x = 0;
+        while (rl < a.length && !lineCheckH(a, rl, rl, 0, (a[rl].length / 3) * 2 - 1, a[rl].length-1)) {
+            //System.out.println(rl);
+            rl++;
+        }
+        x = a[rl].length - 1;
+        while (x > 0 && a[rl][x] == 0) {
+            x--;
+        }
+        while (x > 0 && a[rl][x] == 1) {
+            x--;
+        }
+        while (x > 0 && lineCheckV(rl, a.length, x, 0, a)) {
+            x--;
+        }
+        int x2=x;
+        while (x2 > 0 && !lineCheckV(rl, a.length, x2, 0, a)) {
+            x2--;
+        }
+        return lineCheckV(0, a.length, x, 0, a) != lineCheckV(rl, a.length, x, 0, a);
     }
 
     public void makeSpaceA(ArrayList<Integer> a, ArrayList<Integer> spaceL) {
@@ -239,24 +271,23 @@ public class OCR_Processor {
     // going up down or diagonaly
     // simple way to increse speed, check for height of left and right letter
     public void splitLetter(int[][] a, ArrayList<int[][]> al) {
-        int lowerBound = a.length/3*2, x = 0, y = a.length - 2;
+        int lowerBound = a.length / 2, x = 0, y = a.length - 2;
         while (a[lowerBound][x] == 0) {
             x++;
         }
         while (a[lowerBound][x] == 1) {
             x++;
         }
-        x++;
+        x += 3;
         while (lineCheckH(a, y, y, 0, x, a[0].length)) {
             y--;
         }
-        //System.out.println(y + " " + a.length + " " + x + " " + a[0].length);
+
         int[][] rightLetter = copy2d(a, y, a.length, x, a[0].length);
         int[][] temp = fillXY(copy2d(a, 0, a.length, 0, a[0].length), y, a.length, x, a[0].length);
         int[][] leftLetter = copy2d(temp, 0, a.length, 0, a[0].length);
         // print2DArray(a);
         al.add(trim(leftLetter));
-        print2DArray(rightLetter);
         al.add(trim(rightLetter));
     }
 
@@ -314,16 +345,16 @@ public class OCR_Processor {
         return hit > ((y - x) * (n / 100.0));
     }
 
-    public boolean lineCheckH(int[][] a, int l, int r, int n, int x, int y) {
+    public boolean lineCheckH(int[][] a, int y, int DNE, int n, int l, int r) {
         // double slope = (r - l) / baseImg.length;
         // l+r is the left and right Y values
         int hit = 0;
-        for (int i = x; i < y; i++) {
-            if (a[l][i] == 1) {
+        for (int i = l; i < r; i++) {
+            if (a[y][i] == 1) {
                 hit++;
             }
         }
-        return hit > ((y - x) * (n / 100.0));
+        return hit > ((r - l) * (n / 100.0));
     }
 
     // true=line hit more then n% of line characters
@@ -377,31 +408,15 @@ public class OCR_Processor {
 
     public static void print2DArray(int[][] a) {
         for (int[] n : a) {
-            StringBuilder s= new StringBuilder();
-            s.append("[");
+            String s="[";
             for (int i : n) {
                 if (i == 0) {
-                    s.append(" ");
+                    s+=" ";
                 } else {
-                    s.append(i);
+                    s+=i;
                 }
             }
             System.out.println(s+"]");
-        }
-    }
-    public static void ArrayString(int[][] a) {
-        for (int[] n : a) {
-            StringBuilder s= new StringBuilder();
-            s.append("[");
-            for (int i : n) {
-                if (i == 0) {
-                    s= new StringBuilder(s+" ");
-                } else {
-                    s= new StringBuilder(s + "i");
-                }
-            }
-            s= new StringBuilder(s + "]");
-            Log.d("hi",s.toString());
         }
     }
 
@@ -436,6 +451,22 @@ public class OCR_Processor {
         while (!lineCheckV(t, b, r, 0, a))
             r--;
         int[][] a2 = new int[b - t + 2][r - l + 2];
+        a2 = copy2d(a, t, b, l, r);
+        return a2;
+    }
+
+    public int[][] trimL(int[][] a) {
+        int t = 0, b = a.length - 1, l = 0, r = a[0].length - 1;
+        while (!lineCheckH(a, t, t, 1, l, r)) {
+            t++;
+        }
+        while (!lineCheckH(a, b, b, 0, l, r))
+            b--;
+        while (!lineCheckV(t, b, l, 0, a))
+            l++;
+        while (!lineCheckV(t, b, r, 0, a))
+            r--;
+        int[][] a2 = new int[b - t + 4][r - l + 4];
         a2 = copy2d(a, t, b, l, r);
         return a2;
     }

@@ -8,35 +8,40 @@ import android.graphics.Color;
 import java.util.*;
 
 public class OCR_Letter {
-    ArrayList<int[][]> cap, low, pun, edge;
+    ArrayList<byte[][]> cap, low, pun, edge;
     List<Character> punList;
     List<String> edgeList;
-    int[][] capA, lowA, punA, edgeA;
+    byte[][] capA, lowA, punA, edgeA;
+    List<Integer> punListHeight;
     Context r = OCR_main.r;
+
 
     public OCR_Letter() {
         Bitmap bm1 = BitmapFactory.decodeResource(r.getResources(), R.drawable.letter_cap);
         Bitmap bm2 = BitmapFactory.decodeResource(r.getResources(), R.drawable.letter_low);
         Bitmap bm3 = BitmapFactory.decodeResource(r.getResources(), R.drawable.pun);
         Bitmap bm4 = BitmapFactory.decodeResource(r.getResources(), R.drawable.edge2);
-
         punList = new ArrayList<>();
         edgeList = new ArrayList<>();
-        capA = imgToArray(bm1, 15);
-        lowA = imgToArray(bm2, 15);
-        punA = imgToArray(bm3, 15);
-        edgeA = imgToArray(bm4, 15);
+        punListHeight = new ArrayList<>();
+        capA = imgToArray(bm1);
+        lowA = imgToArray(bm2);
+        punA = imgToArray(bm3);
+        edgeA = imgToArray(bm4);
         cap = createArrays(capA);
         low = createArrays(lowA);
         pun = createArrays(punA);
         edge = createArrays(edgeA);
-        Collections.addAll(punList, '!', '“', '#', '&', '‘', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
-                '>', '?', '@', '`');
-        Collections.addAll(edgeList, "ff", "ft");
+        Collections.addAll(punList, '!', '“', '#', '&', '‘', '(', ')', '*', '+', ',', '-', '.', 'l', ':', ';', '<', '=',
+                '>', '?', '@','`');
+        bm1.recycle();bm2.recycle();bm3.recycle();bm4.recycle();
+        capA=null;lowA=null;punA=null;edgeA=null;
+        Collections.addAll(punListHeight,1,0,1,1,0,1,1,0,0,0,0,0,1,1,1,1,0,1,1,1);
+        Collections.addAll(edgeList, "ff","ft","rv", "tw", "rt", "fy", "fo","tw","fa");
     }
 
-    public int[][] getChar(char a) {
-        int[][] array = {};
+    public byte[][] getChar(char a) {
+        byte[][] array = {};
         if (a < 96) {
             array = low.get(a - 97);
         } else {
@@ -45,10 +50,9 @@ public class OCR_Letter {
         return array;
     }
 
-    public ArrayList<int[][]> createArrays(int[][] baseImg) {
-        ArrayList<int[][]> a = new ArrayList<>();
+    public ArrayList<byte[][]> createArrays(byte[][] baseImg) {
+        ArrayList<byte[][]> a = new ArrayList<>();
         int top = 0, bottem = baseImg.length, width = baseImg[0].length;
-        // System.out.println(baseImg[0].length);
         ArrayList<Integer> indexs = new ArrayList<>();
         // code to isolate letter by gap between them
         int temp = 0;
@@ -61,15 +65,19 @@ public class OCR_Letter {
             }
         }
         // starting at temp create the indvidual arrays
-        int i = 0, r;
+        int i = 0, r = 0;
         while (i < indexs.size() - 1) {
             r = i + 1;
             while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
                 r++;
-            // System.out.println(top + " " + bottem + " " + i + " " + r);// indexs.get(i)+"
-            // "+indexs.get(r));
+            if(pun!=null&&r+10 < indexs.size() - 1 && indexs.get(r+10) == (indexs.get(r + 11) - 1)
+                    &&(indexs.get(r+10)-(indexs.get(r)))<25){
+                r+=10;
+                while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
+                    r++;
+            }
             if (a.size() == 1 && baseImg.length == 140) {
-                r += 3;
+                r++;
                 while (r < indexs.size() - 1 && indexs.get(r) == (indexs.get(r + 1) - 1))
                     r++;
                 a.add(copy2d(top, bottem, indexs.get(i), indexs.get(r) + 1, baseImg));
@@ -83,9 +91,9 @@ public class OCR_Letter {
         return a;
     }
 
-    public static int[][] imgToArray(Bitmap pic, int t) {
+    public static byte[][] imgToArray(Bitmap pic) {
         int h = pic.getHeight(), w = pic.getWidth();
-        int[][] a = new int[h + 2][w + 2];
+        byte[][] a = new byte[h + 2][w + 2];
         for (int i = 1; i < h; i++) {
             for (int j = 1; j < w; j++) {
                 if (hexIsBlack(pic, j, i, 15)) {
@@ -96,7 +104,7 @@ public class OCR_Letter {
         boolean go = true;
         int coloum = 0;
         while (go) {
-            for (int[] ints : a) {
+            for (byte[] ints : a) {
                 if (ints[coloum] == 1) {
                     go = false;
                     coloum--;
@@ -104,16 +112,15 @@ public class OCR_Letter {
             }
             coloum++;
         }
-        int[][] a2 = new int[h + 2][w - coloum + 2];
+        byte[][] a2 = new byte[h + 2][w - coloum + 2];
         for (int i = 0; i < h; i++) {
-            for (int j = coloum; j < h + 2; j++) {
-                a2[i][j - coloum] = a[i][j];
-            }
+            if (h + 2 - coloum >= 0)
+                System.arraycopy(a[i], coloum, a2[i], 0, h + 2 - coloum);
         }
         return a;
     }
 
-    public boolean lineCheckV(int t, int b, int r, int n, int[][] baseImg) {
+    public boolean lineCheckV(int t, int b, int r, int n, byte[][] baseImg) {
         int hit = 0;
         for (int i = t; i < b; i++) {
             if (baseImg[i][r] == 1) {
@@ -123,7 +130,7 @@ public class OCR_Letter {
         return hit > ((b - t) * (n / 100.0));
     }
 
-    public boolean lineCheckH(int y, int l, int r, int n, int[][] baseImg) {
+    public boolean lineCheckH(int y, int l, int r, int n, byte[][] baseImg) {
         int hit = 0;
         for (int i = l; i < r; i++) {
             if (baseImg[y][i] == 1) {
@@ -133,29 +140,27 @@ public class OCR_Letter {
         return hit > ((r - l) * (n / 100.0));
     }
 
-    public int[][] copy2d(int t, int b, int l, int r, int[][] baseImg) {
+    public byte[][] copy2d(int t, int b, int l, int r, byte[][] baseImg) {
         while (!lineCheckH(t, l, r, 0, baseImg))
             t++;
         b--;
         while (!lineCheckH(b, l, r, 0, baseImg))
             b--;
-        int[][] a = new int[(b - t) + 2][(r - l) + 2];
+        byte[][] a = new byte[(b - t) + 2][(r - l) + 2];
         for (int i = 0; i < b - t; i++) {
-            for (int j = 0; j < (r - l); j++) {
-                a[i + 1][j + 1] = baseImg[t + i][l + j];
-            }
+            if (r - l >= 0) System.arraycopy(baseImg[t + i], l, a[i + 1], 1, r - l);
         }
         return a;
     }
 
-    public static void print2DArray(int[][] a) {
-        for (int[] n : a) {
+    public static void print2DArray(byte[][] a) {
+        for (byte[] n : a) {
             System.out.print("[");
             for (int i : n) {
                 if (i == 0) {
                     System.out.print(" ");
                 } else {
-                    System.out.print(i + "");
+                    System.out.print(String.valueOf(i));
                 }
             }
             System.out.println("]");

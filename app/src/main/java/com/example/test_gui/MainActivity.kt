@@ -5,10 +5,8 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -36,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +43,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.test_gui.ui.theme.Test_guiTheme
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import kotlin.concurrent.thread
 
 
@@ -114,9 +113,13 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(bitmap) {
             img = bitmap
         }
-        if (img != null) {
+
+        if (img != null && !img!!.isRecycled) {
+            val out = ByteArrayOutputStream()
+            img?.compress(Bitmap.CompressFormat.PNG, 100, out)
+            val decoded = BitmapFactory.decodeStream(ByteArrayInputStream(out.toByteArray()))
             Image(
-                bitmap = img!!.asImageBitmap(),
+                bitmap = decoded!!.asImageBitmap(),
                 contentDescription = "Image",
                 modifier = Modifier
                     .padding(10.dp)
@@ -155,11 +158,11 @@ class MainActivity : ComponentActivity() {
             // Now options.outWidth and options.outHeight should contain the dimensions
 
             options.inJustDecodeBounds = false
-            val myBitmap = BitmapFactory.decodeFile(getRealPathFromURI(imageUri), options)
+            myBitmap2 = BitmapFactory.decodeFile(getRealPathFromURI(imageUri), options)
 
-            myBitmap2 = myBitmap
 
-            if (myBitmap != null) {
+
+            if (myBitmap2 != null) {
                 println("${myBitmap2?.height} ${myBitmap2?.width}")
             }
         }
@@ -308,9 +311,13 @@ class MainActivity : ComponentActivity() {
                     val myThread = thread {
                         s2 = "Not done"
                         s = ocr.go(myBitmap2)
+                        while(!OCR_main.startOCR)
+                            Thread.sleep(10);
+                        myBitmap2?.recycle()
                         s2 = "Done"
-                        println(s);
+                        //println(s);
                     }
+                    Thread.sleep(20);
                 }
             }
         }

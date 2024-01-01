@@ -5,7 +5,9 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
@@ -158,7 +160,7 @@ class MainActivity : ComponentActivity() {
             // Now options.outWidth and options.outHeight should contain the dimensions
 
             options.inJustDecodeBounds = false
-            myBitmap2 = BitmapFactory.decodeFile(getRealPathFromURI(imageUri), options)
+            myBitmap2 = reduceColorDepth(BitmapFactory.decodeFile(getRealPathFromURI(imageUri), options))
 
 
 
@@ -174,6 +176,19 @@ class MainActivity : ComponentActivity() {
         val column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
         cursor.moveToFirst()
         return cursor.getString(column_index)
+    }
+    private fun reduceColorDepth(originalBitmap: Bitmap): Bitmap? {
+        // Create a new bitmap with RGB_565 color configuration
+        val reducedColorDepthBitmap =
+            Bitmap.createBitmap(originalBitmap.width, originalBitmap.height, Bitmap.Config.RGB_565)
+
+        // Create a canvas and draw the original bitmap onto the new bitmap
+        val canvas = Canvas(reducedColorDepthBitmap)
+        val paint = Paint()
+        paint.isDither = true
+        paint.isFilterBitmap = true
+        canvas.drawBitmap(originalBitmap, 0f, 0f, paint)
+        return reducedColorDepthBitmap
     }
 
     fun rotateBitmap(source: Bitmap, angle: Float): Bitmap {

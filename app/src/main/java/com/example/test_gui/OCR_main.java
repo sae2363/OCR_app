@@ -15,6 +15,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class OCR_main {
     @SuppressLint("StaticFieldLeak")
@@ -24,17 +27,12 @@ public class OCR_main {
     static boolean startOCR;
     static double ram=0;
 
-    public static void main(String[] args) throws InterruptedException {
-        OCR_Processor pro = new OCR_Processor();
-        Bitmap bm = BitmapFactory.decodeResource(r.getResources(), R.drawable.img1);
-        out = pro.processArray(imgToArray(scaleBI(bm, 1)));
-    }
     public static void main2(Bitmap b) throws InterruptedException {
         OCR_Processor pro = new OCR_Processor();
 
         startOCR=false;
         double ram=0;
-        //b = BitmapFactory.decodeResource(r.getResources(), R.drawable.block2);
+        //b = BitmapFactory.decodeResource(r.getResources(), R.drawable.block2mini);
         //error in img to array out of bound
         double value=1.0;
         new Thread(() -> {
@@ -57,20 +55,16 @@ public class OCR_main {
 
         }).start();
         begin = System.currentTimeMillis();
-        if(b.getHeight()>1){
-            b = reduceColorDepth(b);
-        }
-        System.out.println(time()+" color");
-        b=scaleBI(b, value);
-        byte[][] ba=imgToArray(b);
-        System.out.println(time()+" array");
+        Bitmap b2 = reduceColorDepth(b);
         b.recycle();
+        System.out.println(time()+" color");
+        byte[][] ba=imgToArray(b2);
+        b2.recycle();
         System.gc();
-        //print2DArray(ba);
         startOCR=true;
         System.out.println(time()+" before");
         out = pro.processArray(ba);
-        System.out.println(time()+" after");
+        System.out.println(out);
         long end = System.currentTimeMillis();
         long time = end - begin;
         System.out.println("Elapsed Time: " + time + " milli seconds"+"   Average Ram usage: "+ram);
@@ -101,7 +95,7 @@ public class OCR_main {
         return createScaledBitmap(pic, (int)(pic.getWidth() * scale), (int)(pic.getHeight() * scale), true);
     }
 
-    public static byte[][] imgToArray(Bitmap pic) {
+    public static byte[][] imgToArray(Bitmap pic) throws InterruptedException {
         int h = pic.getHeight()-1, w = pic.getWidth()-1,l=0,t=0;
         int avgWhite = getAvgColor(pic);
         while (!lineCheckH(pic, t+2, 0, w, avgWhite)) {
@@ -117,13 +111,19 @@ public class OCR_main {
             w-=2;
         }
         byte[][] a = new byte[h-t + 2][w-l + 2];
-        for (int i = 1; i < h-t-1; i++) {
+        int[] pixels;
+        for (int i = 0; i < h - t; i++) {
+            pixels = new int[w-l-1];
+            pic.getPixels(pixels,0,pic.getWidth(),l,i+t,w-l-1,1);
             for (int j = 1; j < w-l-1; j++) {
-                if (hexIsBlack(pic, j+l, i+t, avgWhite)) {
+                if (hexIsBlack(pixels[j], j+l, i+t, avgWhite)) {
                     a[i][j] = 1;
                 }
             }
+            if(i%10==0)
+                System.gc();
         }
+
         return a;
     }
 
@@ -168,9 +168,7 @@ public class OCR_main {
         return out;
     }
 
-    public static boolean hexIsBlack(Bitmap bitmap, int x, int y, int w) {
-        // Get the color of the pixel at position (x, y)
-        int pixel = bitmap.getPixel(x, y);
+    public static boolean hexIsBlack(int pixel, int x, int y, int w) {
 
         // Extract RGB components
         int red = Color.red(pixel);

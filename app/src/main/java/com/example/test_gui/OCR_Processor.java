@@ -1,6 +1,9 @@
 package com.example.test_gui;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -69,7 +72,7 @@ public class OCR_Processor {
     // Takes every letter array and compared it to pre defined character with the
     // highest matching being
     // put in to the final string
-    public String string(ArrayList<ArrayList<OCR_letterObj>> LArray) {
+    public String string(ArrayList<ArrayList<OCR_letterObj>> LArray) throws InterruptedException {
         OCR_Letter letters = new OCR_Letter();
         StringBuilder s = new StringBuilder();
         int avgH = 0, avgW = 0, count = 0;
@@ -84,37 +87,28 @@ public class OCR_Processor {
 
         avgH = (int) (avgH / (double) count);
         avgW = (int) (avgW / (double) count);
-        Thread[] t = new Thread[4];
+        ExecutorService executor = Executors.newFixedThreadPool(1);
+
         for (int l = 0; l < LArray.size(); l++) {
             int i = 0;
             int offset = 0;
             while (i < LArray.get(l).size()) {
-                // compairing each single letter to all possible characters
-                for (int k = 0; k < t.length; k++) {
-                    //print2DArray(LArray.get(l).get(i).to2D());
-                    if ((t[k]==null||!t[k].isAlive())&&i<LArray.get(l).size()) {
-                        t[k] = new Thread(new compair(letters, LArray.get(l).get(i), avgH, l, i + offset));
-                        t[k].start();
+                // comparing each single letter to all possible characters
+                for (int k = 0; k < 4; k++) {
+                    if (i < LArray.get(l).size()) {
+                        executor.submit(new compair(letters, LArray.get(l).get(i), avgH, l, i + offset));
                         i++;
                         if (spaceLM.get(l).contains(i)) {
                             string.get(l)[i + offset] = ' ';
                             offset++;
                         }
-
                     }
                 }
             }
         }
-        boolean stillRunning=true;
-        while(stillRunning){
-            stillRunning=false;
-            for (Thread thread : t) {
-                if (thread != null && thread.isAlive()) {
-                    stillRunning = true;
-                }
-            }
-        }
-        t=null;
+
+        executor.shutdown();
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         for (char[] a : string) {
             for (char n : a) {
                 s.append(n);
@@ -535,7 +529,7 @@ public class OCR_Processor {
             a2 = copy2d(a, t, b, l, r);
             return a2;
         } catch (Exception e) {
-            print2DArray(a);
+            System.out.println("Error in trim");
             return new byte[1][1];
         }
     }
